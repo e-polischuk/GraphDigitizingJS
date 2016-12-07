@@ -1,0 +1,305 @@
+<!-- Tool for finding of dimensions -->
+<!-- Author: Jenya Polischuk, Dec 2016 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Graph digitizing</title>
+<script>
+window.onload = function() {
+	var map = document.getElementById("map");
+	var coords = document.getElementById("coords");
+	var scaleX = document.getElementById("scaleX");
+	var scaleY = document.getElementById("scaleY");
+	var sizeX = document.getElementById("sizeX");
+	var sizeY = document.getElementById("sizeY")
+	var dist = document.getElementById("distance");
+	var origin = document.getElementById("origin");
+	var x0 = document.getElementById("x0");
+	var y0 = document.getElementById("y0");
+	var ptable = document.getElementById("ptable");
+	var rowid = 0;
+	var xorig;
+	var yorig;
+	var x;
+	var x1;
+	var x2;
+	var y;
+	var y1;
+	var y2;
+	var originX;
+	var originY;
+	var relationX;
+	var relationY;
+	var isPoint = false;
+	var marked = false;
+	
+	document.getElementById('upload').onchange = function(){
+		map.src = this.files[0].name;
+		relationX = 0;
+		relationY = 0;
+		clearAllMarkers();
+		sizeX.value = "";
+		sizeY.value = "";
+		x0.value = "";
+		y0.value = "";
+		xorig = 0;
+		yorig = 0;
+		scaleX.innerHTML = "HORIZONTAL SCALE UNDEFINED!";
+		scaleY.innerHTML = "VERTICAL SCALE UNDEFINED!";
+		origin.innerHTML = " corresponds to nothing!"
+		dist.innerHTML = "Input coords of a origin point and choose it on the graph";
+		marked = true;
+    };
+	
+	map.onmousemove = function (eventObj) {
+		var xm = relationX * (eventObj.pageX - x1) + Number(xorig);
+		var ym = relationY * (eventObj.pageY - y1) + Number(yorig);
+		coords.innerHTML = "Cursor coordinates in units of length:  X = " + xm + ", Y = " + ym;
+	};
+	
+	map.onclick = handleClick;
+	
+	function handleClick(eObj) {
+		var change = false;
+		if (origin.innerHTML === " corresponds to nothing!" || xorig !== x0.value || yorig !== y0.value) {
+			xorig = x0.value;
+			yorig = y0.value;
+			x1 = eObj.pageX;
+			y1 = eObj.pageY;
+			clearAllMarkers();
+			mark(eObj, "o");
+			marked = true;
+			origin.innerHTML = " is chosen!"
+			sizeX.value = "";
+			sizeY.value = "";
+			scaleX.innerHTML = "HORIZONTAL SCALE UNDEFINED!";
+			scaleY.innerHTML = "VERTICAL SCALE UNDEFINED!";
+			dist.innerHTML = "Input a value from the horizontal axis and select it on the graph";
+		} else if (originX !== sizeX.value || dist.innerHTML === "Input a value from the horizontal axis and select it on the graph") {
+			clearAllMarkers();
+			mark(eObj, 'x');
+			originX = sizeX.value;
+			if (dist.innerHTML !== "Input a value from the horizontal axis and select it on the graph") change = true;
+			x2 = eObj.pageX;
+			relationX = originX - xorig;
+			relationX = relationX / (x2-x1);
+			origin.innerHTML = " corresponds to [" + relationX * (x1 - map.offsetLeft) + ", " + relationY * (y1 - map.offsetTop) + "] on the image;"
+			scaleX.innerHTML = "HORIZONTAL SCALE = 1 px : " + relationX + " units";
+			dist.innerHTML = change ? "Value from the horizontal axis is changed, select a point on the graph" : "Input a value from the vertical axis and select it on the graph";
+			change = false;
+			marked = true;
+			alert("HORIZONTAL SCALE IS SET =  1 px : " + relationX + " units.");
+		} else if (originY !== sizeY.value || dist.innerHTML === "Input a value from the vertical axis and select it on the graph") {
+			clearAllMarkers();
+			mark(eObj, 'y');
+			originY = sizeY.value;
+			if (dist.innerHTML !== "Input a value from the vertical axis and select it on the graph") change = true;
+			y2 = eObj.pageY;
+			relationY = originY - yorig;
+			relationY = relationY / (y2-y1);
+			origin.innerHTML = " corresponds to [" + relationX * (x1 - map.offsetLeft) + ", " + relationY * (y1 - map.offsetTop) + "] on the image;"
+			scaleY.innerHTML = "VERTICAL SCALE = 1 px : " + relationY + " units";
+			dist.innerHTML = change ? "Value from the vertical axis is changed, select a point on the graph" : "Select a point on the graph";
+			change = false;
+			marked = true;
+			alert("VERTICAL SCALE WAS SET =  1 px : " + relationY + " units.");
+		} else if (scaleX.innerHTML !== "HORIZONTAL SCALE UNDEFINED!" && scaleY.innerHTML !== "VERTICAL SCALE UNDEFINED!") {
+			if(marked) {
+				clearAllMarkers();
+				marked = false;
+			}
+			x = relationX * (eObj.pageX - x1) + Number(xorig);
+			y = relationY * (eObj.pageY - y1) + Number(yorig);
+			rowid++;
+			mark(eObj, rowid);
+			var row = ptable.insertRow(rowid);
+			row.insertCell(0).innerHTML = rowid;
+			row.insertCell(1).innerHTML = x;
+			row.insertCell(2).innerHTML = y;
+			dist.innerHTML = "SELECTED POINT: [" + x + ", " + y + "];"
+			isPoint = true;
+		} else dist.innerHTML = "UNDEFINED ORIGIN POINT OR SCALE!";
+	};
+
+	function mark(e, cid) {
+		if(document.getElementById("flag").checked) {
+			var cursor = document.createElement("img");
+			cursor.src = document.getElementById("marker").value + ".png";
+			cursor.setAttribute("id", "cur" + cid);
+			cursor.setAttribute("class", "cursor");
+			cursor.setAttribute("style", "position:absolute; left:" + (e.pageX-23) + "px; top:" + (e.pageY-23) + "px; z-index:1");
+			document.getElementById("package").appendChild(cursor);
+			cursor.onclick = handleClick;
+		};
+	};
+	
+	function clearMarker(cid) {
+		var cursor = document.getElementById("cur" + cid);
+		if(cursor)
+			cursor.parentNode.removeChild(cursor);
+	};
+	
+	function clearAllMarkers() {
+		var cursors = document.getElementsByClassName("cursor");
+		while(cursors[0])
+			cursors[0].parentNode.removeChild(cursors[0]);
+	};
+	
+	window.onmousewheel = function() {
+		if(!document.getElementById("flag").checked)
+			clearAllMarkers();
+	};
+	
+	document.getElementById("cancel").onclick = function() {
+		if(isPoint) {
+			ptable.deleteRow(rowid);
+			clearMarker(rowid);
+			rowid--;
+			dist.innerHTML = "Select a point on graph";
+			isPoint = false;
+		} else alert("WARNING: POINT UNDEFINED!");
+	};
+	
+	document.getElementById("export").onclick = function() {
+		
+		var tab_text="<table border='2px'><tr bgcolor='#87AFC6'>";
+		var textRange; var j=0;
+		tab = document.getElementById('ptable'); // id of table
+
+		for(j = 0 ; j < tab.rows.length ; j++) {     
+			tab_text=tab_text+tab.rows[j].innerHTML+"</tr>"; //tab_text=tab_text+"</tr>";
+		};
+
+		tab_text=tab_text+"</table>";
+		tab_text= tab_text.replace(/<A[^>]*>|<\/A>/g, ""); //remove if u want links in your table
+		tab_text= tab_text.replace(/<img[^>]*>/gi,""); // remove if u want images in your table
+		tab_text= tab_text.replace(/<input[^>]*>|<\/input>/gi, ""); // reomves input params
+
+		var ua = window.navigator.userAgent;
+		var msie = ua.indexOf("MSIE "); 
+
+		if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))      // If Internet Explorer
+		{
+			txtArea1.document.open("txt/html","replace");
+			txtArea1.document.write(tab_text);
+			txtArea1.document.close();
+			txtArea1.focus();
+			sa=txtArea1.document.execCommand("SaveAs",true,"points.xls");
+		}  
+		else                 //other browser not tested on IE 11
+			sa = window.open('data:application/vnd.ms-excel,' + encodeURIComponent(tab_text));  
+		
+		clearTable();
+		if(!marked) dist.innerHTML = "Select a point on graph";
+		isPoint = false;
+	
+		return (sa);
+	}
+	
+	function clearTable() {
+		while(rowid > 0) {
+			ptable.deleteRow(rowid);
+			rowid--;
+		}
+		clearAllMarkers();
+		isPoint = false;
+	}
+};
+</script>
+<style>
+	body {
+		background-color: #FFFFB4;
+		font: 80% arial;
+	}
+	#scaleX, #scaleY, #origin, #orig {
+		color: blue;
+		font-style: normal;
+		font-weight: bold;
+		font-size: 110%;
+	}
+	#distance {
+		color: red;
+		font-weight: bold;
+		font-size: 115%;
+	}
+	label {
+		color: grey;
+		font-size: 85%;
+	}
+	form, #coords {
+		font-size: 95%;
+		color: green;
+		font-style: italic;
+	}
+	#start {
+		color: green;
+		font-style: normal;
+		font-weight: bold;
+		font-size: 105%;
+	}
+	td {
+		border: 1px solid black;
+		width: 75px;
+		height: 15px;
+		text-align: center;
+		vertical-align: center;
+		background-color: white;
+		font-size: 105%;
+	}
+	.ttl {
+		font-weight: bold;
+		font-size: 105%;
+		background-color: #e6ffff;
+	}
+</style>
+</head>
+<body>
+NOTE:  This tool works for an image of graph in rectangular coord system with strictly vertical and horizontal axes only!<br><br>
+<form> 
+<span id="start">CONSISTENTLY PERFORM FOLLOWING ITEMS:</span><br>
+1) Put an graph image in the same folder and choose it here to upload - <input id="upload" type="file">
+<br>
+2) Input origin point coords and choose it on image:
+<p id="orig"><span>ORIGIN POINT : [</span>
+<input id="x0" type="text" style="width:36px; height:12px">,
+<input id="y0" type="text" style="width:36px; height:12px"> ]
+<span id="origin"> corresponds to nothing!<span>
+</p>
+3) Input any value from horizontal axe here <input id="sizeX" type="text" style="width:36px; height:12px"> then click it on the graph;
+<p id="scaleX">HORIZONTAL SCALE UNDEFINED!</p>
+4) Input any value from vertical axe here <input id="sizeY" type="text" style="width:36px; height:12px"> then click it on the graph;
+<p id="scaleY">VERTICAL SCALE UNDEFINED!</p>
+</form>
+<p><span id="distance">CHOOSE IMAGE!</span>
+<input id="cancel" type="button" value="CANCEL">
+</p>
+<p>
+<label>
+<input id="flag" type="checkbox" checked="checked"/>
+<select id="marker">
+	<option>marker1</option>
+	<option>marker2</option>
+	<option>marker3</option>
+	<option>marker4</option>
+</select>
+- show chosen points (WARNING: if page zoom > 300%, it works bad).
+</label>
+<br><span id="coords">Choose an image and it will appear below...</span>
+</p>
+<img id="map" border="1px solid #00a8e1" style="z-index:0">
+<br><br>
+<table id="ptable">
+  <tr>
+	<td class="ttl">ID</td>
+    <td class="ttl">X-coord</td>
+	<td class="ttl">Y-coord</td>
+  </tr>
+</table>
+<br><br>
+<iframe id="txtArea1" style="display:none"></iframe>
+<input id="export" type="button" value="EXPORT TO EXCEL"/>
+<div id="package"></div>
+</body>
+</html>
