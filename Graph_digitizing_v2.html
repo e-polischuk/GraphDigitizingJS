@@ -51,7 +51,7 @@ window.onload = function() {
 		origin.innerHTML = " corresponds to nothing!"
 		dist.innerHTML = "Input coords of a origin point and choose it on the graph";
 		marked = true;
-    };
+    	};
 	
 	map.onmousemove = function (eventObj) {
 		var xm = relationX * (eventObj.pageX - x1) + Number(xorig);
@@ -196,16 +196,16 @@ window.onload = function() {
 		isPoint = false;
 	
 		return (sa);
-	}
+	};
 	
 	function clearTable() {
 		while(rowid > 0) {
 			ptable.deleteRow(rowid);
 			rowid--;
-		}
+		};
 		clearAllMarkers();
 		isPoint = false;
-	}
+	};
 };
 </script>
 <style>
@@ -293,7 +293,7 @@ NOTE:  This tool works for an image of graph in rectangular coord system with st
 <table id="ptable">
   <tr>
 	<td class="ttl">ID</td>
-    <td class="ttl">X-coord</td>
+    	<td class="ttl">X-coord</td>
 	<td class="ttl">Y-coord</td>
   </tr>
 </table>
